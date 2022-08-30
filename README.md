@@ -59,3 +59,5 @@ leastconn balancing mode
   - Login:password for statistics admin:admin
   - Disable haproxy version display
   - Assign authorization realm Haproxy Statistics
+
+#### 12.Add [logging](https://github.com/vadim-davydchenko/HAProxy_final/blob/09a0d4dfed52e00b2e0207d795b134f05a27d6da/haproxy.cfg#L19) format to the defaults block
