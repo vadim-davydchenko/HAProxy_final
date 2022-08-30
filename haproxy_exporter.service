@@ -1,0 +1,17 @@
+[Unit]
+Description=Haproxy_exporter
+Wants=network-online.target
+After=network-online.target
+[Service]
+Type=simple
+User=haproxy
+Group=haproxy
+Restart=on-failure
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStart=/usr/bin/haproxy_exporter \
+  --haproxy.scrape-uri=http://admin:admin@localhost:777/stats;csv \
+  --web.listen-address=0.0.0.0:9091
+SyslogIdentifier=haproxy_exporter
+Restart=always
+[Install]
+WantedBy=multi-user.target
