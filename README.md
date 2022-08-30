@@ -32,4 +32,17 @@ cat rebrain.pem rebrain.key > /etc/haproxy/rebrain.pem
   - Redirect traffic to 2 servers named `rebrain_01_80`, `rebrain_02_80`, respectively, at `127.0.0.1:80`. Activate health check for each server.
 
 #### 8.Setup backend [rebrain_lk](https://github.com/vadim-davydchenko/HAProxy_final/blob/c24b2a58aeca1f521bc22a487932d107863f4293/haproxy.cfg#L51)
+  - Work in http mode
+  - Contain a named acl named `is_cached` that checks using path_end that the path request ends in .js, .php. or .css
+leastconn balancing mode
+  - Use rebrain_cache to get cache files and add new ones if acl `is_cached` conditions are met
+  - Redirect traffic to 2 servers named `rebrain_01_81` and `rebrain_02_81` at `127.0.0.1:81`. Activate health_check with a check interval of 4 seconds.
+  - Maximum number of connections for `rebrain_02_81` 80
 
+#### 9.Setup backend [rebrain_back](https://github.com/vadim-davydchenko/HAProxy_final/blob/8ec2ff518ba32d81471634147d9f4a3e2537bda5/haproxy.cfg#L60)
+  - Work in http mode
+  - Balancer source
+  - Prefix PHPSESSID cookies with s1 for `rebrain_01_82` server, s2 for `rebrain_02_82` server, and s3 for `rebrain_03_82` server. Disable caching for cookies.
+  - Redirect traffic to 3 servers `rebrain_01_82`, `rebrain_02_82` and `rebrain_03_82` at `127.0.0.1:82`. Activate health check. Explicitly specify a health check on port 82. The check interval is 8 seconds. The maximum number of connections is 1100 for each server.
+
+#### 10.Setup backend [rebrain_sql](https://github.com/vadim-davydchenko/HAProxy_final/blob/8e3ff03d4deeca72dd6a76c7c777871e2559e4e0/haproxy.cfg#L68)
