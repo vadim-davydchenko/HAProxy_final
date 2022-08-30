@@ -46,3 +46,16 @@ leastconn balancing mode
   - Redirect traffic to 3 servers `rebrain_01_82`, `rebrain_02_82` and `rebrain_03_82` at `127.0.0.1:82`. Activate health check. Explicitly specify a health check on port 82. The check interval is 8 seconds. The maximum number of connections is 1100 for each server.
 
 #### 10.Setup backend [rebrain_sql](https://github.com/vadim-davydchenko/HAProxy_final/blob/8e3ff03d4deeca72dd6a76c7c777871e2559e4e0/haproxy.cfg#L68)
+  - Roundrobin balancing mode.
+  - Activate mysql health-check for user haproxy.
+  - Redirect traffic to `rebrain_db_1` and `rebrain_db_2` servers at `127.0.0.1:3306`. Activate health-check, explicitly specify health check on port 3306, interval between checks is 2 seconds, assign server inactive after 2 failed checks, assign active after 1 successful check, maximum number of connections is 100.
+
+#### 11.Add a [listen stat](https://github.com/vadim-davydchenko/HAProxy_final/blob/0d294e95dd3460b95a1ded5db61a19a473d0fc3d/haproxy.cfg#L74) that satisfies the following conditions:
+  - Listen on port 777
+  - Work in http mode
+  - Activate statistics
+  - Activate show-legends
+  - Update every 30 seconds
+  - Login:password for statistics admin:admin
+  - Disable haproxy version display
+  - Assign authorization realm Haproxy Statistics
