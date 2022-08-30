@@ -31,5 +31,5 @@ cat rebrain.pem rebrain.key > /etc/haproxy/rebrain.pem
   - Add REBRAIN cookie with value `rebrain_01_80` for `rebrain_01_80` server and `rebrain_02_80` for `rebrain_02_80` server using cookie insert. Do not assign new links if the   request already contains them. Don't store cookies in cache.
   - Redirect traffic to 2 servers named `rebrain_01_80`, `rebrain_02_80`, respectively, at `127.0.0.1:80`. Activate health check for each server.
 
-#### 8.Setup backend [rebrain_lk](https://github.com/vadim-davydchenko/HAProxy_final/blob/5f504f3d4921a7bbea867974eedabc6d2c30e705/haproxy.cfg#L51)
+#### 8.Setup backend [rebrain_lk](https://github.com/vadim-davydchenko/HAProxy_final/blob/c24b2a58aeca1f521bc22a487932d107863f4293/haproxy.cfg#L51)
 
