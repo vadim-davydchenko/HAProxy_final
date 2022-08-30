@@ -114,7 +114,7 @@ chown -R prometheus:prometheus /var/lib/prometheus/
     static_configs:
     - targets: ['localhost:9091']
  ```
-    And apply settings
+  And apply settings
  
  ```
  sudo systemctl daemon-reload
