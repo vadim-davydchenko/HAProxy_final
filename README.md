@@ -61,3 +61,27 @@ leastconn balancing mode
   - Assign authorization realm Haproxy Statistics
 
 #### 12.Add [logging](https://github.com/vadim-davydchenko/HAProxy_final/blob/09a0d4dfed52e00b2e0207d795b134f05a27d6da/haproxy.cfg#L19) format to the defaults block
+#### 13.Setting `MySQL`, add new user database with name `haproxy` for use in heelth-check
+```
+sudo apt install mariadb-server -y
+CREATE USER haproxy;
+```
+
+#### 14.Setting `keepalived`
+Monitor the haproxy process on both servers and if it is disabled on the master server, the virtual ip must be assigned to the backup server, and when enabled, assigned back to the master server.
+  - Setting network in `sysctl` and install `keepalived`
+ ```
+ net.ipv6.conf.all.disable_ipv6 = 1
+ net.ipv6.conf.default.disable_ipv6 = 1
+ net.ipv4.ip_nonlocal_bind = 1
+ net.ipv4.conf.all.arp_ignore = 1
+ net.ipv4.conf.all.arp_announce = 1
+ net.ipv4.conf.all.arp_filter = 0
+ net.ipv4.conf.eth0.arp_filter = 1
+ 
+ sudo sysctl -p
+ sudo apt-get install keepalived -y
+ ```
+ 
+  - Setting `/etc/keepalived/keepalived.conf` for [MASTER](https://github.com/vadim-davydchenko/HAProxy_final/blob/master/keepalived_master.conf) and [BACKUP](https://github.com/vadim-davydchenko/HAProxy_final/blob/master/keepalived_backup.conf)
+ 
