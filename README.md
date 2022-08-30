@@ -85,3 +85,39 @@ Monitor the haproxy process on both servers and if it is disabled on the master 
  
   - Setting `/etc/keepalived/keepalived.conf` for [MASTER](https://github.com/vadim-davydchenko/HAProxy_final/blob/master/keepalived_master.conf) and [BACKUP](https://github.com/vadim-davydchenko/HAProxy_final/blob/master/keepalived_backup.conf)
  
+#### 15. Setting prometheus and Grafana
+ - Install prometheus and granting rights
+```
+wget https://github.com/prometheus/prometheus/releases/download/v2.28.1/prometheus-2.28.1.linux-amd64.tar.gz
+tar xf prometheus-2.28.1.linux-amd64.tar.gz
+sudo cp promtool /usr/local/bin/
+sudo cp prometheus /usr/local/bin/
+sudo mkdir /etc/prometheus /var/lib/prometheus
+sudo cp prometheus.yml /etc/prometheus
+sudo useradd --no-create-home --home-dir / --shell /bin/false prometheus
+chown -R prometheus:prometheus /etc/prometheus/
+chown -R prometheus:prometheus /var/lib/prometheus/
+```
+ - Setting systemd /etc/systemd/system/[prometheus.service](https://github.com/vadim-davydchenko/HAProxy_final/blob/master/prometheus.service)
+ - Setup haproxy_exporter
+ ```
+ wget https://github.com/prometheus/haproxy_exporter/releases/download/v0.8.0/haproxy_exporter-0.8.0.linux-amd64.tar.gz
+ tar -xzf haproxy_exporter-0.8.0.linux-amd64.tar.gz
+ cd haproxy_exporter-0.8.0.linux-amd64
+ sudo cp haproxy_exporter /usr/bin/
+ ```
+ - Setting systemd /etc/systemd/system/[haproxy_exporter.service](https://github.com/vadim-davydchenko/HAProxy_final/blob/master/haproxy_exporter.service)
+ - Configure `prometheus.yml`
+ ```
+ scrape_configs:
+  - job_name: 'haproxy'
+    static_configs:
+    - targets: ['localhost:9091']
+ ```
+    And apply settings
+ 
+ ```
+ sudo systemctl daemon-reload
+ sudo systemctl start haproxy_exporter && sudo systemctl restart prometheus
+ ```
+ - Install Grafana
