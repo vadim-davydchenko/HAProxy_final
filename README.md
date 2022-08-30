@@ -23,3 +23,10 @@ cat rebrain.pem rebrain.key > /etc/haproxy/rebrain.pem
   - Use backend `rebrain_lk` if `acl` `url_lk` is running
   - Default backend `rebrain_back`
 #### 5.Setting frontend [front_sql](https://github.com/vadim-davydchenko/HAProxy_final/blob/7f3206ecfb7d6592120ff5e141e56ef8b4b12c40/haproxy.cfg#L37)
+#### 6.Setup 3 backends `rebrain_api`, `rebrain_lk` and `rebrain_back`
+#### 6.Setup backend [rebrain_api](https://github.com/vadim-davydchenko/HAProxy_final/blob/5f504f3d4921a7bbea867974eedabc6d2c30e705/haproxy.cfg#L43)
+  - Work in http mode
+  - Use roundrobin balancing
+  - Use the `prefer-last-server` option
+  - Add REBRAIN cookie with value `rebrain_01_80` for `rebrain_01_80` server and `rebrain_02_80` for `rebrain_02_80` server using cookie insert. Do not assign new links if the   request already contains them. Don't store cookies in cache.
+  - Redirect traffic to 2 servers named `rebrain_01_80`, `rebrain_02_80`, respectively, at `127.0.0.1:80`. Activate health check for each server.
