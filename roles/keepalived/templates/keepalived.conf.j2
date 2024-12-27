@@ -5,20 +5,20 @@ vrrp_script haproxy {
 }
 
 vrrp_instance VRRP1 {
-    state MASTER
+    state {{ keepalived_state }}
     interface eth0
     virtual_router_id 69
-    priority 49
+    priority {{ keepalived_priority }}
     advert_int 1
     garp_master_delay 10
     debug 1
 
-    unicast_src_ip <private ip MASTER> 
+    unicast_src_ip {{ keepalived_unicast_src_ip }}
     unicast_peer {
-       <private ip BACKUP> 
+       {{ keepalived_unicast_peer }}
     }
     virtual_ipaddress {
-      <public virtual ip>/24 brd <last broadcast public virtual ip MASTER> scope global label eth0:10
+      {{ keepalived_virtual_ip }}/{{ keepalived_subnet_mask }} brd {{ keepalived_broadcast_address }} scope global label eth0:10
     }
     track_script {
          haproxy

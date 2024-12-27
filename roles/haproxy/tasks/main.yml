@@ -1,0 +1,40 @@
+- name: Install HAProxy
+  ansible.builtin.apt:
+    name: haproxy
+    state: present
+    update_cache: true
+
+- name: Generate RSA key
+  ansible.builtin.command: openssl genrsa -out rebrain.key 2048
+  changed_when: false
+
+- name: Generate CSR
+  ansible.builtin.command: openssl req -x509 -new -nodes -key rebrain.key -sha256 -days 1024 -out rebrain.pem
+  changed_when: false
+
+- name: Combine certificate and key
+  ansible.builtin.command: cat rebrain.pem rebrain.key > etc/haproxy/rebrain.pem
+  changed_when: false
+
+- name: Deploy HAProxy configuration
+  ansible.builtin.template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    mode: '0644'
+  notify: Restart HAProxy
+
+- name: Validate Haproxy configuration
+  ansible.builtin.command: haproxy -c -f /etc/haproxy/haproxy.cfg
+  changed_when: false
+  failed_when: haproxy_config_check.rc != 0
+
+- name: Display HAProxy configuration validation result
+  ansible.builtin.debug:
+    msg: "HAProxy configuration is valid."
+  when: haproxy_config_check.rc == 0
+
+- name: Ensure HAProxy is enabled and started
+  ansible.builtin.service:
+    name: haproxy
+    state: started
+    enabled: true

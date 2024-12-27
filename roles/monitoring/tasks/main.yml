@@ -1,0 +1,9 @@
+- name: Install Prometheus
+  ansible.builtin.include_tasks: prometheus.yml
+
+- name: Install HAProxy Exporter
+  ansible.builtin.include_tasks: haproxy_exporter.yml
+
+- name: Install Grafana
+  ansible.builtin.include_tasks: grafana.yml
+  when: ansible_hostname == 'master'

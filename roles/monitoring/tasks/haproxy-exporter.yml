@@ -1,0 +1,29 @@
+- name: Download HAProxy Exporter
+  ansible.builtin.get_url:
+    url: "https://github.com/prometheus/haproxy_exporter/releases/download/v0.8.0/haproxy_exporter-0.8.0.linux-amd64.tar.gz"
+    dest: "/tmp/haproxy_exporter-0.11.0.linux-amd64.tar.gz"
+    mode: "0644"
+
+- name: Extract HAProxy Exporter
+  ansible.builtin.unarchive:
+    src: "/tmp/haproxy_exporter-0.8.0.linux-amd64.tar.gz"
+    dest: "/tmp/"
+    remote_src: true
+
+- name: Move HAProxy Exporter binaries
+  ansible.builtin.copy:
+    src: "/tmp/haproxy_exporter-0.8.0.linux-amd64/haproxy_exporter"
+    dest: "/usr/bin/haproxy_exporter"
+    mode: "0755"
+
+- name: Deploy HAProxy Exporter configuration
+  ansible.builtin.template:
+    src: haproxy_exporter.service.j2
+    dest: /etc/systemd/system/haproxy_exporter.service
+    mode: '0644'
+
+- name: Ensure HAProxy Exporter is enabled and started
+  ansible.builtin.service:
+    name: haproxy_exporter
+    state: started
+    enabled: true

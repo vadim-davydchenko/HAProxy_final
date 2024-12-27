@@ -1,0 +1,7 @@
+- name: Setup Keepalived and HAProxy on MASTER and BACKUP
+  hosts: all
+  become: true
+  roles:
+    - role: haproxy
+    - role: mysql
+    - role: keepalived

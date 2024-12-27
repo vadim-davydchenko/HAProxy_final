@@ -1,0 +1,7 @@
+keepalived_state: "MASTER"
+keepalived_priority: 49
+keepalived_unicast_src_ip: "10.129.0.5"
+keepalived_unicast_peer: "10.129.0.27"
+keepalived_virtual_ip: "51.250.27.79"
+keepalived_subnet_mask: 24
+keepalived_broadcast_address: "51.250.27.255"

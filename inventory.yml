@@ -1,0 +1,8 @@
+all:
+  hosts:
+    master:
+      ansible_host: 192.168.0.10
+      ansible_user: root
+    backup:
+      ansible_host: 192.168.0.11
+      ansible_user: root

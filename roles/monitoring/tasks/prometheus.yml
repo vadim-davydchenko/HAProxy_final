@@ -1,0 +1,68 @@
+- name: Download Prometheus
+  ansible.builtin.get_url:
+    url: "https://github.com/prometheus/prometheus/releases/download/v2.28.1/prometheus-2.28.1.linux-amd64.tar.gz"
+    dest: "/tmp/prometheus-2.28.1.linux-amd64.tar.gz"
+    mode: "0644"
+
+- name: Extract Prometheus
+  ansible.builtin.unarchive:
+    src: "/tmp/prometheus-2.28.1.linux-amd64.tar.gz"
+    dest: "/tmp/"
+    remote_src: true
+
+- name: Move Prometheus binaries
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-2.28.1.linux-amd64/prometheus"
+    dest: "/usr/local/bin/prometheus"
+    mode: "0755"
+
+- name: Move Promtool binaries
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-2.28.1.linux-amd64/promtool"
+    dest: "/usr/local/bin/promtool"
+    mode: "0755"
+
+- name: Create prometheus directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  with_items:
+    - "/etc/prometheus"
+    - "/var/lib/prometheus"
+
+- name: Deploy Prometheus configuration
+  ansible.builtin.template:
+    src: prometheus.yml.j2
+    dest: /etc/prometheus/prometheus.yml
+    mode: '0644'
+
+- name: Create Prometheus user
+  ansible.builtin.user:
+    name: prometheus
+    state: present
+    shell: /bin/false
+
+- name: Deploy prometheus systemd unit
+  ansible.builtin.template:
+    src: prometheus.service.j2
+    dest: /etc/systemd/system/prometheus.service
+    mode: '0644'
+
+- name: Ensure privileged on Prometheus directory
+  ansible.builtin.file:
+    path: " {{ item }}"
+    state: directory
+    mode: "0755"
+    owner: prometheus
+    group: prometheus
+    recurse: true
+  with_items:
+    - "/var/lib/prometheus"
+    - "/etc/prometheus"
+
+- name: Ensure Prometheus is enabled and started
+  ansible.builtin.service:
+    name: prometheus
+    state: started
+    enabled: true

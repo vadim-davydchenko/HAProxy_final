@@ -16,21 +16,21 @@ defaults
   timeout  client 1m
   timeout  server 1m
   timeout  check 10s
-  log-format {\"type\":\ \"haproxy\",\"client_ip\":\ \"%ci\",\"client_port\":\ \"%cp\",\"request_date\":\ \"[%t]\",\"frontend_name\":\ \"%f\",\"backend_name\":\ \"%b\",\"server_name\":\ \"%s\",\"http_status_code\":\ \"%ST\",\"bytes_read\":\ \"%B\",\"termination_state\":\ \"%ts\",\"actconn\":\ \"%ac\",\"feconn\":\ \"%fc\",\"beconn\":\ \"%bc\",\"srv_conn\":\ \"%sc\",\"retries\":\ \"%rc\",\"server_queue/backend_queue\":\ \"%sq/%bq\",\"http_method\":\ \"%HM\",\"http_request_and_version\":\ \"%HU\ %HV\",\"backend_server_ip\":\ \"%si\",\"backend_server_port\":\ \"%sp\",\"TR\":\ \"%TR\",\"Tw\":\ \"%Tw\",\"Tc\":\ \"%Tc\",\"Tr\":\ \"%Tr\",\"Ta\":\ \"%Ta\"}
+  log-format "{{ log_format | default('{\"type\": \"haproxy\"...}') }}"
 
 cache rebrain_cache
-    total-max-size 4095   
-    max-object-size 10000 
-    max-age 30            
+    total-max-size 4095
+    max-object-size 10000
+    max-age 30
 
 frontend rebrain_front
     bind *:443 ssl crt /etc/haproxy/rebrain.pem
     mode http
     http-request set-header X-Forwarded-For %[src]
-    http-request cache-use rebrain_cache 
-    http-response cache-store rebrain_cache 
+    http-request cache-use rebrain_cache
+    http-response cache-store rebrain_cache
     acl url_api path_beg /api
-    acl url_lk path_beg /lk 
+    acl url_lk path_beg /lk
     use_backend rebrain_lk if url_lk
     use_backend rebrain_api if url_api
     default_backend rebrain_back
@@ -44,7 +44,7 @@ frontend front_sql
 backend rebrain_api
     mode http
     balance roundrobin
-    option prefer-last-server 
+    option prefer-last-server
     cookie REBRAIN indirect nocache insert
     server rebrain_01_80 127.0.0.1:80 check cookie rebrain_01_80
     server rebrain_02_80 127.0.0.1:80 check cookie rebrain_02_80
@@ -55,7 +55,7 @@ backend rebrain_lk
     acl is_cached path_end -i .js .php .css
     http-request cache-use rebrain_cache if is_cached
     http-response cache-store rebrain_cache if is_cached
-    server rebrain_01_81 127.0.0.1:81 check inter 4s 
+    server rebrain_01_81 127.0.0.1:81 check inter 4s
     server rebrain_02_81 127.0.0.1:81 check inter 4s maxconn 80
 
 backend rebrain_back
@@ -75,10 +75,10 @@ backend rebrain_sql
 listen stat
     bind *:777
     mode http
-    stats enable 
-    stats show-legends 
-    stats refresh 30s 
+    stats enable
+    stats show-legends
+    stats refresh 30s
     stats auth admin:admin
-    stats hide-version 
+    stats hide-version
     stats realm Haproxy\ Statistics
     stats uri /stats

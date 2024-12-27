@@ -1,123 +1,98 @@
-### Install 2 virtual machines: one MASTER, another BACKUP, establish interaction between them using `keepalived`. Each machine has 3 servers installed on ports 80, 81 and 82 and a MySQL database. The src folder contains the web server code. Are processed by the case along the paths /lk.php, /api.php and /
-#### 1.Create a self-signed certificate `rebrain.pem containing the certificate and private key and place it in `/etc/haproxy/rebrain.pem`
+# High Availability Setup with Ansible
 
-```
-openssl genrsa -out rebrain.key 2048
-openssl req -x509 -new -nodes -key rebrain.key -sha256 -days 1024 -out rebrain.pem
-cat rebrain.pem rebrain.key > /etc/haproxy/rebrain.pem
-```
-#### 2.The config should contain *cache* [rebrain_cache](https://github.com/vadim-davydchenko/HAProxy_final/blob/c9b08f6306c900d2ea9d967d0af762d0a4f3a105/haproxy.cfg#L20) which should be configured like this:
-  - Maximum memory size 4095
-  - Maximum object size 10000
-  - Maximum lifetime 30
-#### 3.The config must contain 2 frontends `rebrain_front` and `front_sql`
-#### 4.Setting frontend [rebrain_front](https://github.com/vadim-davydchenko/HAProxy_final/blob/95e209bcc3cfba37070ed131aec6196e81a4d998/haproxy.cfg#L25)
-  - Listen on port 443 using `rebrain.pem` certificate
-  - Work in http mode
-  - Add client ip address to all incoming packets in `X-Forwarded-For` header
-  - Use cache `rebrain_cache` for incoming requests
-  - Use cache `rebrain_cache` for server responses
-  - Use named `acl` `url_api` checking that request starts with api using path_beg
-  - Use backend `rebrain_ap`i if `acl` `url_api` is running
-  - Use named `acl` `url_lk` checking that request starts with `lk` using path_beg
-  - Use backend `rebrain_lk` if `acl` `url_lk` is running
-  - Default backend `rebrain_back`
-#### 5.Setting frontend [front_sql](https://github.com/vadim-davydchenko/HAProxy_final/blob/7f3206ecfb7d6592120ff5e141e56ef8b4b12c40/haproxy.cfg#L37)
-#### 6.Setup 3 backends `rebrain_api`, `rebrain_lk` and `rebrain_back`
-#### 7.Setup backend [rebrain_api](https://github.com/vadim-davydchenko/HAProxy_final/blob/5f504f3d4921a7bbea867974eedabc6d2c30e705/haproxy.cfg#L43)
-  - Work in http mode
-  - Use roundrobin balancing
-  - Use the `prefer-last-server` option
-  - Add REBRAIN cookie with value `rebrain_01_80` for `rebrain_01_80` server and `rebrain_02_80` for `rebrain_02_80` server using cookie insert. Do not assign new links if the   request already contains them. Don't store cookies in cache.
-  - Redirect traffic to 2 servers named `rebrain_01_80`, `rebrain_02_80`, respectively, at `127.0.0.1:80`. Activate health check for each server.
+This project automates the configuration of a high-availability environment with the following components:
 
-#### 8.Setup backend [rebrain_lk](https://github.com/vadim-davydchenko/HAProxy_final/blob/c24b2a58aeca1f521bc22a487932d107863f4293/haproxy.cfg#L51)
-  - Work in http mode
-  - Contain a named acl named `is_cached` that checks using path_end that the path request ends in .js, .php. or .css
-leastconn balancing mode
-  - Use rebrain_cache to get cache files and add new ones if acl `is_cached` conditions are met
-  - Redirect traffic to 2 servers named `rebrain_01_81` and `rebrain_02_81` at `127.0.0.1:81`. Activate health_check with a check interval of 4 seconds.
-  - Maximum number of connections for `rebrain_02_81` 80
+- Two virtual machines: `MASTER` and `BACKUP`, configured with `keepalived`.
+- Three web servers on ports 80, 81, and 82 running in Docker containers on each machine.
+- MySQL database for each machine.
+- HAProxy for load balancing and caching.
+- Prometheus and Grafana for monitoring.
 
-#### 9.Setup backend [rebrain_back](https://github.com/vadim-davydchenko/HAProxy_final/blob/8ec2ff518ba32d81471634147d9f4a3e2537bda5/haproxy.cfg#L60)
-  - Work in http mode
-  - Balancer source
-  - Prefix PHPSESSID cookies with s1 for `rebrain_01_82` server, s2 for `rebrain_02_82` server, and s3 for `rebrain_03_82` server. Disable caching for cookies.
-  - Redirect traffic to 3 servers `rebrain_01_82`, `rebrain_02_82` and `rebrain_03_82` at `127.0.0.1:82`. Activate health check. Explicitly specify a health check on port 82. The check interval is 8 seconds. The maximum number of connections is 1100 for each server.
+## Project Overview
 
-#### 10.Setup backend [rebrain_sql](https://github.com/vadim-davydchenko/HAProxy_final/blob/8e3ff03d4deeca72dd6a76c7c777871e2559e4e0/haproxy.cfg#L68)
-  - Roundrobin balancing mode.
-  - Activate mysql health-check for user haproxy.
-  - Redirect traffic to `rebrain_db_1` and `rebrain_db_2` servers at `127.0.0.1:3306`. Activate health-check, explicitly specify health check on port 3306, interval between checks is 2 seconds, assign server inactive after 2 failed checks, assign active after 1 successful check, maximum number of connections is 100.
+The environment includes:
 
-#### 11.Add a [listen stat](https://github.com/vadim-davydchenko/HAProxy_final/blob/0d294e95dd3460b95a1ded5db61a19a473d0fc3d/haproxy.cfg#L74) that satisfies the following conditions:
-  - Listen on port 777
-  - Work in http mode
-  - Activate statistics
-  - Activate show-legends
-  - Update every 30 seconds
-  - Login:password for statistics admin:admin
-  - Disable haproxy version display
-  - Assign authorization realm Haproxy Statistics
+- **Web Server Code**: Stored in the `src` folder and served from paths `/lk.php`, `/api.php`, and `/`.
+- **SSL/TLS**: A self-signed certificate `rebrain.pem` for secure communication.
+- **HAProxy**: Frontends and backends configured with caching, load balancing, and health checks.
+- **Keepalived**: Manages virtual IP failover between MASTER and BACKUP.
+- **Prometheus and Grafana**: For monitoring system health and metrics.
 
-#### 12.Add [logging](https://github.com/vadim-davydchenko/HAProxy_final/blob/09a0d4dfed52e00b2e0207d795b134f05a27d6da/haproxy.cfg#L19) format to the defaults block
-#### 13.Setting `MySQL`, add new user database with name `haproxy` for use in heelth-check
-```
-sudo apt install mariadb-server -y
-CREATE USER haproxy;
+## Roles
+
+The project is organized into the following Ansible roles:
+
+1. **haproxy**: Configures HAProxy with SSL, caching, and load balancing.
+2. **mysql**: Installs MariaDB and creates a user for HAProxy health checks.
+3. **keepalived**: Configures MASTER and BACKUP nodes for IP failover.
+4. **monitoring**: Sets up Prometheus, HAProxy Exporter, and Grafana for monitoring.
+
+```yaml
+all:
+  hosts:
+    master:
+      ansible_host: 192.168.0.10
+      ansible_user: root
+    backup:
+      ansible_host: 192.168.0.11
+      ansible_user: root
 ```
 
-#### 14.Setting `keepalived`
-Monitor the haproxy process on both servers and if it is disabled on the master server, the virtual ip must be assigned to the backup server, and when enabled, assigned back to the master server.
-  - Setting network in `sysctl` and install `keepalived`
- ```
- net.ipv6.conf.all.disable_ipv6 = 1
- net.ipv6.conf.default.disable_ipv6 = 1
- net.ipv4.ip_nonlocal_bind = 1
- net.ipv4.conf.all.arp_ignore = 1
- net.ipv4.conf.all.arp_announce = 1
- net.ipv4.conf.all.arp_filter = 0
- net.ipv4.conf.eth0.arp_filter = 1
- 
- sudo sysctl -p
- sudo apt-get install keepalived -y
- ```
- 
-  - Setting `/etc/keepalived/keepalived.conf` for [MASTER](https://github.com/vadim-davydchenko/HAProxy_final/blob/master/keepalived_master.conf) and [BACKUP](https://github.com/vadim-davydchenko/HAProxy_final/blob/master/keepalived_backup.conf)
- 
-#### 15. Setting prometheus and Grafana
- - Install prometheus and granting rights
-```
-wget https://github.com/prometheus/prometheus/releases/download/v2.28.1/prometheus-2.28.1.linux-amd64.tar.gz
-tar xf prometheus-2.28.1.linux-amd64.tar.gz
-sudo cp promtool /usr/local/bin/
-sudo cp prometheus /usr/local/bin/
-sudo mkdir /etc/prometheus /var/lib/prometheus
-sudo cp prometheus.yml /etc/prometheus
-sudo useradd --no-create-home --home-dir / --shell /bin/false prometheus
-chown -R prometheus:prometheus /etc/prometheus/
-chown -R prometheus:prometheus /var/lib/prometheus/
-```
- - Setting systemd /etc/systemd/system/[prometheus.service](https://github.com/vadim-davydchenko/HAProxy_final/blob/master/prometheus.service)
- - Setup haproxy_exporter
- ```
- wget https://github.com/prometheus/haproxy_exporter/releases/download/v0.8.0/haproxy_exporter-0.8.0.linux-amd64.tar.gz
- tar -xzf haproxy_exporter-0.8.0.linux-amd64.tar.gz
- cd haproxy_exporter-0.8.0.linux-amd64
- sudo cp haproxy_exporter /usr/bin/
- ```
- - Setting systemd /etc/systemd/system/[haproxy_exporter.service](https://github.com/vadim-davydchenko/HAProxy_final/blob/master/haproxy_exporter.service)
- - Configure `prometheus.yml`
- ```
- scrape_configs:
-  - job_name: 'haproxy'
-    static_configs:
-    - targets: ['localhost:9091']
- ```
-  And apply settings
- 
- ```
- sudo systemctl daemon-reload
- sudo systemctl start haproxy_exporter && sudo systemctl restart prometheus
- ```
- - Install Grafana
+1. **Prepare `host_vars`**
+
+   Define specific configurations for `master` and `backup` in the `host_vars` directory:
+
+   - `host_vars/master.yml`
+   - `host_vars/backup.yml`
+
+2. **Run the Playbook**
+
+   ```bash
+   ansible-playbook -i inventory.yaml site.yml
+   ```
+
+---
+
+## Role Details
+
+### 1. **HAProxy**
+
+- Configures `rebrain_front` and `front_sql` frontends.
+- Sets up `rebrain_api`, `rebrain_lk`, `rebrain_back`, and `rebrain_sql` backends.
+- Enables caching (`rebrain_cache`) with parameters:
+  - Max size: 4095 MB
+  - Max object size: 10,000 bytes
+  - Max lifetime: 30 seconds
+- Deploys a self-signed SSL certificate.
+
+### 2. **MySQL**
+
+- Installs MariaDB.
+- Creates a `haproxy` user for health checks.
+
+### 3. **Keepalived**
+
+- Configures IP failover between `MASTER` and `BACKUP`.
+- Network settings applied via `sysctl`.
+- Monitors HAProxy and assigns a virtual IP (`51.250.27.79`).
+
+### 4. **Monitoring**
+
+- **Prometheus**:
+  - Scrapes HAProxy Exporter metrics.
+  - Configuration file located at `/etc/prometheus/prometheus.yml`.
+- **HAProxy Exporter**:
+  - Scrape URI: `http://admin:admin@localhost:777/stats;csv`.
+  - Runs on port `9091`.
+- **Grafana** (on MASTER only):
+  - Installed from the official Grafana repository.
+
+---
+
+## Outputs
+
+After execution:
+
+- MASTER and BACKUP are synchronized and ready for failover.
+- HAProxy is configured with caching, SSL, and load balancing.
+- Prometheus and Grafana provide system and application monitoring dashboards.

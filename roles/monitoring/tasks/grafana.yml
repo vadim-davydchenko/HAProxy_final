@@ -1,0 +1,16 @@
+- name: Add Grafana repository
+  ansible.builtin.apt_repository:
+    repo: "deb https://packages.grafana.com/oss/deb stable main"
+    state: present
+
+- name: Install Grafana
+  ansible.builtin.apt:
+    name: grafana
+    state: present
+    update_cache: true
+
+- name: Ensure Grafana is enabled and started
+  ansible.builtin.service:
+    name: grafana-server
+    state: started
+    enabled: true
